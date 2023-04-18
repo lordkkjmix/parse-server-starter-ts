@@ -84,7 +84,7 @@ app.get('/', (request: Request, res: Response) => {
 // There will be a test page available on the /test path of your server url
 // Remove this before launching your app
 app.get('/test', (request: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '/public/test.html'));
+    res.sendFile(path.join(__dirname, '../public/test.html'));
 });
 
 

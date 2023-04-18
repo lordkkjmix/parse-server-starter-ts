@@ -6,17 +6,17 @@
         "noImplicitAny": true,
         "moduleResolution": "node",
         "sourceMap": false,
-        "outDir": "dist",
+        "outDir": "dist/",
         "baseUrl": ".",
         "module": "commonjs",
         "paths": {
             "*": [
-                "src/*"
+                "src/*",
             ]
         }
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
     ],
     "exclude": [
         "node_modules"

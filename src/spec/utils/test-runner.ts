@@ -1,9 +1,11 @@
 const http = require('http');
 const ParseServer = require('parse-server').ParseServer;
-import { app, config } from '../../dist/index';
+import { app, config } from '../../index';
 export const dropDB = async (): Promise<void> => {
   await Parse.User.logOut();
-  return await app.database.deleteEverything(true);
+  if ('database' in app) {
+    return await app.database.deleteEverything(true);
+  }
 };
 
 

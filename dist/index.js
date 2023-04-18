@@ -77,7 +77,7 @@ exports.app.get('/', (request, res) => {
 // There will be a test page available on the /test path of your server url
 // Remove this before launching your app
 exports.app.get('/test', (request, res) => {
-    res.sendFile(path.join(__dirname, '/public/test.html'));
+    res.sendFile(path.join(__dirname, '../public/test.html'));
 });
 if (!TESTING) {
     const httpServer = http.createServer(exports.app);

@@ -1,0 +1,57 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.stopParseServer = exports.startParseServer = exports.dropDB = void 0;
+const http = require('http');
+const ParseServer = require('parse-server').ParseServer;
+const index_1 = require("../../index");
+const dropDB = async () => {
+    await Parse.User.logOut();
+    if ('database' in index_1.app) {
+        return await index_1.app.database.deleteEverything(true);
+    }
+};
+exports.dropDB = dropDB;
+let parseServerState;
+/**
+ * Starts the ParseServer instance
+ * @param {Object} parseServerOptions Used for creating the `ParseServer`
+ * @return {Promise} Runner state
+ */
+async function startParseServer() {
+    if ("databaseAdapter" in index_1.config) {
+        delete index_1.config.databaseAdapter;
+    }
+    const parseServerOptions = Object.assign(index_1.config, {
+        databaseURI: 'mongodb://localhost:27017/parse-test',
+        masterKey: 'test',
+        javascriptKey: 'test',
+        appId: 'test',
+        port: 30001,
+        mountPath: '/test',
+        serverURL: `http://localhost:30001/test`,
+        logLevel: 'error',
+        silent: true,
+    });
+    const parseServer = new ParseServer(parseServerOptions);
+    //await parseServer.start();
+    index_1.app.use(parseServerOptions.mountPath, parseServer);
+    const httpServer = http.createServer(index_1.app);
+    await new Promise(resolve => httpServer.listen(parseServerOptions.port, resolve));
+    Object.assign(parseServerState = {}, {
+        parseServer,
+        httpServer,
+        expressApp: index_1.app,
+        parseServerOptions,
+    });
+    return parseServerOptions;
+}
+exports.startParseServer = startParseServer;
+/**
+ * Stops the ParseServer instance
+ * @return {Promise}
+ */
+async function stopParseServer() {
+    await new Promise(resolve => parseServerState.httpServer.close(resolve));
+    parseServerState = {};
+}
+exports.stopParseServer = stopParseServer;
