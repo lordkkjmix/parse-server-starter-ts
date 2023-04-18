@@ -1,5 +1,7 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.app = exports.config = void 0;
 const express = require('express');
-import { Request, Response } from 'express';
 const ParseServer = require('parse-server').ParseServer;
 const ParseDashboard = require('parse-dashboard');
 const path = require('path');
@@ -15,13 +17,13 @@ const MOUNT_PATH = process.env.PARSE_MOUNT || '/parse';
 const SERVER_NAME = process.env.SERVER_NAME || '';
 const DASHBOARD_HTTPS = process.env.DASHBOARD_HTTPS || false;
 const SERVER_URL = process.env.SERVER_URL || `http://${SERVER_HOST}:${SERVER_PORT}${MOUNT_PATH}`;
-const LIVEQUERY_CLASSE_NAMES: String[] = (process.env.LIVEQUERY_CLASSE_NAMES) as unknown as String[] || <String[]>[];
+const LIVEQUERY_CLASSE_NAMES = (process.env.LIVEQUERY_CLASSE_NAMES) || [];
 const PUBLIC_SERVER_URL = process.env.PUBLIC_SERVER_URL || SERVER_URL;
 const DASHBOARD_USER = process.env.DASHBOARD_USER || "user";
 const DASHBOARD_PASS = process.env.DASHBOARD_PASS || "12345";
 const PARSE_SERVER_DIRECT_ACCESS = process.env.PARSE_SERVER_DIRECT_ACCESS || true;
 const TESTING = process.env.TESTING || false;
-export const config: Object = {
+exports.config = {
     databaseURI: DATABASE_URI,
     cloud: path.resolve(__dirname + CLOUD_CODE_MAIN),
     appId: APP_ID,
@@ -40,63 +42,50 @@ export const config: Object = {
 if (!DATABASE_URI) {
     console.log('DATABASE_URI not specified, falling back to localhost.');
 }
-export const app = express();
-
+exports.app = express();
 // Serve static assets from the /public folder
-app.use('/public', express.static(path.join(__dirname, '../public')));
-
+exports.app.use('/public', express.static(path.join(__dirname, '../public')));
 if (!TESTING) {
-    const api = new ParseServer(config);
-    app.use(MOUNT_PATH, api);
+    const api = new ParseServer(exports.config);
+    exports.app.use(MOUNT_PATH, api);
 }
 //Parse DashBoard
-const dashboard = new ParseDashboard(
-    {
-        apps: [
-            {
-                serverURL: MOUNT_PATH,
-                appId: APP_ID,
-                masterKey: MASTER_KEY,
-                appName: SERVER_NAME,
-                publicServerURL: PUBLIC_SERVER_URL,
-                //iconName: "appIcon.png", //to uncomment, add app icon in folder "/icons"
-                supportedPushLocales: ["en", "fr"]
-            },
-        ],
-        // iconsFolder: "icons",
-        users: [
-            {
-                user: DASHBOARD_USER,
-                pass: DASHBOARD_PASS,
-            }
-        ],
-    },
-    { allowInsecureHTTP: DASHBOARD_HTTPS }
-);
-app.use(
-    '/dashboard',
-    dashboard
-);
-app.get('/', (request: Request, res: Response) => {
+const dashboard = new ParseDashboard({
+    apps: [
+        {
+            serverURL: MOUNT_PATH,
+            appId: APP_ID,
+            masterKey: MASTER_KEY,
+            appName: SERVER_NAME,
+            publicServerURL: PUBLIC_SERVER_URL,
+            //iconName: "appIcon.png", //to uncomment, add app icon in folder "/icons"
+            supportedPushLocales: ["en", "fr"]
+        },
+    ],
+    // iconsFolder: "icons",
+    users: [
+        {
+            user: DASHBOARD_USER,
+            pass: DASHBOARD_PASS,
+        }
+    ],
+}, { allowInsecureHTTP: DASHBOARD_HTTPS });
+exports.app.use('/dashboard', dashboard);
+exports.app.get('/', (request, res) => {
     res.status(200).send("I dream of being a website.  Please star the parse-server repo on GitHub!");
 });
-
 // There will be a test page available on the /test path of your server url
 // Remove this before launching your app
-app.get('/test', (request: Request, res: Response) => {
+exports.app.get('/test', (request, res) => {
     res.sendFile(path.join(__dirname, '/public/test.html'));
 });
-
-
 if (!TESTING) {
-    const httpServer = http.createServer(app);
+    const httpServer = http.createServer(exports.app);
     httpServer.listen(SERVER_PORT, () => {
-        console.log(
-            `${SERVER_NAME} is now running in ${IS_DEVELOPMENT ? "dev" : "prod"} mode on http://${SERVER_HOST}:${SERVER_PORT}${MOUNT_PATH}`
-        );
+        console.log(`${SERVER_NAME} is now running in ${IS_DEVELOPMENT ? "dev" : "prod"} mode on http://${SERVER_HOST}:${SERVER_PORT}${MOUNT_PATH}`);
     });
     ParseServer.createLiveQueryServer(httpServer);
 }
 module.exports = {
-    app, config
-}
+    app: exports.app, config: exports.config
+};
