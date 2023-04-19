@@ -9,14 +9,12 @@
   "license": "MIT",
   "main": "index.js",
   "scripts": {
-    "coverage": "TESTING=true nyc jasmine",
+    "coverage": "TESTING=true JASMINE_CONFIG_PATH=src/spec/support/jasmine.json nyc jasmine",
     "lint": "eslint . --ext .ts",
     "lint-all": "eslint --cache ./dist/cloud && eslint --cache ./dist/index.js && eslint --cache ./spec",
     "lint-fix": "eslint --cache --fix ./dist/cloud && eslint --cache --fix ./dist/index.js && eslint --cache  --fix./spec",
     "prettier": "prettier --write '{cloud,spec}/{**/*,*}.js' 'index.js'",
-    "start": "node dist/index.js",
-    "start-local": "tsc && node -r dotenv/config dist/index.js",
-    "deploy": "node dist/index.js",
+    "start": "tsc && node dist/index.js",
     "test": "tsc && mongodb-runner start && TESTING=true JASMINE_CONFIG_PATH=src/spec/support/jasmine.json jasmine --reporter=jasmine-console-reporter",
     "watch": "tsc -w"
   },

@@ -7,7 +7,7 @@
 
 ### Launch server MongoDB
 
-* After official MongoDB Installation and dotEnv service
+* After official MongoDB Installation
 ```bash
 $ mongod --dbpath=data
 $ npm run start-local
