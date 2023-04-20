@@ -5,31 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "node",
+            "command": "npm start",
+            "name": "Launch Debug",
             "request": "launch",
-            "name": "Lancer le programme",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${file}",
-            "outFiles": [
-                "${workspaceFolder}/**/*.js"
-            ]
+            "type": "node-terminal"
         },
         {
-            "type": "node",
+            "command": "npm test",
+            "name": "Launch test",
             "request": "launch",
-            "name": "Jasmine Debug",
-            "program": "${workspaceFolder}/node_modules/jasmine/bin/jasmine",
-            "args": [
-                "${workspaceFolder}/TSOutput/tests/${fileBasenameNoExtension}.js"
-            ],
-            "preLaunchTask": "tsc: build - tsconfig.json",
-            "outFiles": [
-                "${workspaceFolder}/TSOutput/**/*.js"
-            ],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
-        }
+            "type": "node-terminal"
+        },
     ]
 }
