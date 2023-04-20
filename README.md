@@ -4,24 +4,25 @@
 
 * Authentification
 * Push Notificaton
+* Send Email
 
-### Launch server MongoDB
+### Local Launch
 
 * After official MongoDB Installation
 ```bash
 $ mongod --dbpath=data
-$ npm run start-local
+$ npm run start
 ```
 
-### Launch with mongodb-runner
+### Run Test
 
 ```bash
-$ npm install -g mongodb-runner
-$ mongodb-runner start
-$ npm install dotenv
-$ npm run start-local
+$ npm install
+$ npm test
 ```
 ### Input your own code
 
-* Set your dotenv/pm2 env variable or default will be used
 * You can edit all files in /src (all files in /dist will be replace on launch)
+* Customize server starting in file index.ts
+
+## Example project will available soon...
