@@ -1,14 +1,14 @@
 {
     "compilerOptions": {
         "allowSyntheticDefaultImports": true,
-        "esModuleInterop": false,
+        "esModuleInterop": true,
         "target": "ES2022",
         "noImplicitAny": true,
         "moduleResolution": "node",
         "sourceMap": false,
-        "outDir": "dist/",
+        "outDir": "dist",
         "baseUrl": ".",
-        "module": "commonjs",
+        "module": "CommonJS",
         "paths": {
             "*": [
                 "src/*",

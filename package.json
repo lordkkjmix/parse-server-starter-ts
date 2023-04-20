@@ -14,16 +14,19 @@
     "lint-all": "eslint --cache ./dist/cloud && eslint --cache ./dist/index.js && eslint --cache ./spec",
     "lint-fix": "eslint --cache --fix ./dist/cloud && eslint --cache --fix ./dist/index.js && eslint --cache  --fix./spec",
     "prettier": "prettier --write '{cloud,spec}/{**/*,*}.js' 'index.js'",
-    "start": "tsc && node dist/index.js",
+    "start": "tsc && node --trace-deprecation dist/index.js",
     "test": "tsc && mongodb-runner start && TESTING=true JASMINE_CONFIG_PATH=src/spec/support/jasmine.json jasmine --reporter=jasmine-console-reporter",
     "watch": "tsc -w"
   },
   "dependencies": {
+    "@parse/push-adapter": "^4.1.2",
     "axios": "1.3.5",
     "express": "4.18.2",
+    "nodemailer": "^6.9.1",
     "parse": "^4.0.1",
     "parse-dashboard": "^5.0.0",
-    "parse-server": "^5.4.3"
+    "parse-server": "^5.4.3",
+    "parse-server-api-mail-adapter": "^2.2.0"
   },
   "type": "commonjs",
   "devDependencies": {

@@ -4,7 +4,7 @@ import { app, config } from '../../index';
 export const dropDB = async (): Promise<void> => {
   await Parse.User.logOut();
   if ('database' in app) {
-    return await app.database.deleteEverything(true);
+    return await (app.database as any).deleteEverything(true);
   }
 };
 

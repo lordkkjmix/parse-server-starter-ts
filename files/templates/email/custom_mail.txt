@@ -1,0 +1,3 @@
+Hello!
+
+Custom content for app : {{appName}}
