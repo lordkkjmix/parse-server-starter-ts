@@ -1,0 +1,43 @@
+version: '3'
+services:
+  postgis:
+    image: postgis/postgis
+    container_name: postgis-container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345678
+      POSTGRES_DB: parse-starterapp-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgis-data:/var/lib/postgresql/data
+
+  jeudi-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parse-starter-container
+    volumes:
+      - ./dist:/app/dist
+    environment:
+      - PORT=8080
+      - APP_ID=defaultAppId
+      - MASTER_KEY=12345678
+      - DATABASE_URI=postgres://postgres:12345678@postgis:5432/parse-starterapp-db?ssl=false
+      - SERVER_NAME=Jeudi Server
+      - DASHBOARD_HTTPS=false
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgis
+      - redis
+
+  redis:
+    image: redis
+    container_name: redis-container
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgis-data:

@@ -1,26 +1,30 @@
 FROM node:latest
+LABEL container_name="parse-starter-app"
+LABEL version="1.0"
+RUN mkdir app
 
-RUN mkdir parse
-
-ADD . /parse
-WORKDIR /parse
+ADD . /app
+WORKDIR /app
 RUN npm install
 
-ENV APP_ID setYourAppId
-ENV MASTER_KEY setYourMasterKey
-ENV DATABASE_URI setMongoDBURI
+ENV PORT 1337
+ENV APP_ID defaultAppId
+ENV MASTER_KEY 12345678
+ENV DATABASE_URI postgres://postgres:12345678@172.17.0.3:5432/parse-starter-app?ssl=false
+ENV SERVER_NAME Jeudi Server
+ENV DASHBOARD_HTTPS false
 
-# Optional (default : 'parse/cloud/main.js')
-# ENV CLOUD_CODE_MAIN cloudCodePath
+# Optional (default : 'app/cloud/main.js')
+#ENV CLOUD_CODE_MAIN app/dist/cloud/main.js
 
-# Optional (default : '/parse')
-# ENV PARSE_MOUNT mountPath
+# Optional (default : '/app')
+ENV PARSE_MOUNT /api/v1.0
 
 EXPOSE 1337
 
-# Uncomment if you want to access cloud code outside of your container
-# A main.js file must be present, if not Parse will not start
-
-# VOLUME /parse/cloud               
-
-CMD [ "npm", "start" ]
+VOLUME /app
+RUN npx tsc
+#Production
+#RUN rm -rf src
+#CMD [ "npm", "start" ]
+CMD [ "npm", "run", "dev" ]

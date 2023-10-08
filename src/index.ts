@@ -2,6 +2,7 @@
 import express, { Request, Response } from 'express';
 const ParseServer = require('parse-server').ParseServer;
 const ParseDashboard = require('parse-dashboard');
+const RedisCacheAdapter = require('parse-server').RedisCacheAdapter;
 const path = require('path');
 const http = require('http');
 const nodemailer = require("nodemailer");
@@ -13,7 +14,7 @@ const CLIENT_KEY = process.env.CLIENT_KEY || 'client_key';
 const CLOUD_CODE_MAIN = process.env.CLOUD_CODE_MAIN || '/cloud/main.js';
 const DATABASE_URI = process.env.DATABASE_URI || 'mongodb://localhost:27017/test';
 const IS_DEVELOPMENT = process.env.NODE_ENV !== 'production';
-const MOUNT_PATH = process.env.PARSE_MOUNT || '/parse';
+const MOUNT_PATH = process.env.PARSE_MOUNT || '/app';
 const SERVER_NAME = process.env.SERVER_NAME || '';
 const DASHBOARD_HTTPS = process.env.DASHBOARD_HTTPS || false;
 const SERVER_URL = process.env.SERVER_URL || `http://${SERVER_HOST}:${SERVER_PORT}${MOUNT_PATH}`;
@@ -22,7 +23,16 @@ const PUBLIC_SERVER_URL = process.env.PUBLIC_SERVER_URL || SERVER_URL;
 const DASHBOARD_USER = process.env.DASHBOARD_USER || "user";
 const DASHBOARD_PASS = process.env.DASHBOARD_PASS || "pass";
 const PARSE_SERVER_DIRECT_ACCESS = process.env.PARSE_SERVER_DIRECT_ACCESS || true;
+const REST_API_KEY = process.env.REST_API_KEY || "rest_api_key";
+const JAVASCRIPT_KEY = process.env.JAVASCRIPT_KEY || 'javascript_key';
 const TESTING = process.env.TESTING || false;
+const REDIS_URL = process.env.REDIS_URL;
+const FILE_ENCRYPTION_KEY = process.env.FILE_ENCRYPTION_KEY;
+//Cache adapter
+const redisOptions = { url: REDIS_URL }
+const redisCache = new RedisCacheAdapter(redisOptions);
+
+
 //Email config
 const VERIFY_USER_EMAILS = process.env.VERIFY_USER_EMAILS || false;
 const PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL = process.env.PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL || false;
@@ -39,23 +49,41 @@ const ANDROID_PUSH_API_KEY = process.env.ANDROID_PUSH_API_KEY || '';
 const ANDROID_PUSH_SENDER_ID = process.env.ANDROID_PUSH_SENDER_ID || '000000';
 const IOS_PUSH_KEY_ID = process.env.IOS_PUSH_KEY_ID || '';
 const IOS_PUSH_TEAM_ID = process.env.IOS_PUSH_TEAM_ID || 'DEFAULT';
-const filePath = (file: string) => path.resolve(__dirname, '../files/templates/', file);
+const emailTemplatePath = (file: string) => path.resolve(__dirname, '../files/templates/', file);
 const notificationKeyFilePath = (file: string) => path.resolve(__dirname, '../files/keys/', file);
-const Country = {
-    className: "Country",
+const fileStorageFilePath = path.resolve(__dirname, '/storage/');
+
+// Schemas
+
+///Launch Market Schema example
+const MarketSchema = {
+    className: "Market",
     fields: {
-        name: { type: "String", required: true },
+        label: { type: "String", required: true },
+        callCode: { type: "String", required: true },
+        isoCode: { type: "String", required: true },
+        phoneNumberMask: { type: "String" },
+        flag: { type: "File" },
+        currency: { type: "String", enum: ["USD", "EUR", "JPY", "XOF"], defaultValue: "XOF" },
+        languageCode: { type: "String", enum: ["en", "fr", "es"], defaultValue: "fr" },
+        isActive: { type: "Boolean", defaultValue: false },
+        extras: { type: "Object" },
     },
     classLevelPermissions: {
-        find: { requiresAuthentication: true },
-        count: { requiresAuthentication: true },
-        get: { requiresAuthentication: true },
-        // An empty object means that only master key is authorized to manage countries
-        update: {},
-        create: {},
-        delete: {},
+        find: { "*": true },
+        count: { "*": true },
+        get: { "*": true },
+        update: { "role:Admin": true },
+        create: { "role:Admin": true },
+        delete: { "role:Admin": true },
+    },
+    indexes: {
+        label: { label: 1 },
+        code: { code: 1 },
+        isoCode: { isoCode: 1 },
     },
 };
+
 let transporter = nodemailer.createTransport({
     host: SMTP_HOST,
     port: SECURED_SMTP ? 465 : 587,
@@ -84,19 +112,19 @@ const emailAdapterConfig = {
         sender: FROM_ADDRESS,
         templates: {
             passwordResetEmail: {
-                subjectPath: filePath('password_reset_email_subject.txt'),
-                textPath: filePath('password_reset_email.txt'),
-                htmlPath: filePath('password_reset_email.html')
+                subjectPath: emailTemplatePath('password_reset_email_subject.txt'),
+                textPath: emailTemplatePath('password_reset_email.txt'),
+                htmlPath: emailTemplatePath('password_reset_email.html')
             },
             verificationEmail: {
-                subjectPath: filePath('verify_email_subject.txt'),
-                textPath: filePath('verify_email.txt'),
-                htmlPath: filePath('verify_email.html')
+                subjectPath: emailTemplatePath('verify_email_subject.txt'),
+                textPath: emailTemplatePath('verify_email.txt'),
+                htmlPath: emailTemplatePath('verify_email.html')
             },
             customEmail: {
-                subjectPath: filePath('custom_email_subject.txt'),
-                textPath: filePath('custom_email.txt'),
-                htmlPath: filePath('custom_email.html'),
+                subjectPath: emailTemplatePath('custom_email_subject.txt'),
+                textPath: emailTemplatePath('custom_email.txt'),
+                htmlPath: emailTemplatePath('custom_email.html'),
                 // Placeholders are filled into the template file contents.
                 // For example, the placeholder `{{appName}}` in the email
                 // will be replaced the value defined here.
@@ -147,9 +175,9 @@ export const config: Object = {
     cloud: path.resolve(__dirname + CLOUD_CODE_MAIN),
     appId: APP_ID,
     masterKey: MASTER_KEY,
-    //javascriptKey: JAVASCRIPT_KEY,
-    //restAPIKey: REST_API_KEY,
-    //clientKey: CLIENT_KEY,
+    javascriptKey: JAVASCRIPT_KEY,
+    restAPIKey: REST_API_KEY,
+    clientKey: CLIENT_KEY,
     //dotNetKey: DOT_NET_KEY,
     fileKey: CLIENT_KEY,
     appName: SERVER_NAME,
@@ -160,10 +188,11 @@ export const config: Object = {
     allowClientClassCreation: false,
     verifyUserEmails: VERIFY_USER_EMAILS,
     preventLoginWithUnverifiedEmail: PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL,
+    cacheAdapter: redisCache, // cancel if you don't need redis
     // Define schemas of Parse Server
-    // For more knowledge about schemas: https://docs.parseplatform.org/defined-schema/guide/#getting-started
     schema: {
-        definitions: [Country],
+        definitions: [
+            MarketSchema,],
         // If set to `true`, the Parse Server API for schema changes is disabled and schema 
         // changes are only possible by redeployingParse Server with a new schema definition
         lockSchemas: true,
@@ -175,7 +204,7 @@ export const config: Object = {
         recreateModifiedFields: false,
         // If set to `true`, Parse Server will automatically delete non-defined class fields;
         // internal fields in classes like User or Role are never deleted.
-        deleteExtraFields: false,
+        deleteExtraFields: true,
     },
     serverStartComplete: () => {
         // Parse Server is ready with up-to-date schema
@@ -194,6 +223,14 @@ export const config: Object = {
             adapter: new PushAdapter(pushOptions),
         }
         : '',
+    filesAdapter: !TESTING
+        ? {
+            module: "@parse/fs-files-adapter",
+            options: {
+                filesSubDirectory: fileStorageFilePath,
+                encryptionKey: FILE_ENCRYPTION_KEY
+            }
+        } : ''
 };
 // Client-keys like the javascript key or the .NET key are not necessary with parse-server
 // If you wish you require them, you can set them as options in the initialization above:
@@ -241,13 +278,6 @@ app.use(
 app.get('/', (request: Request, res: Response) => {
     res.status(200).send("I dream of being a website.  Please star the parse-server repo on GitHub!");
 });
-
-// There will be a test page available on the /test path of your server url
-// Remove this before launching your app
-app.get('/test', (request: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../public/test.html'));
-});
-
 
 if (!TESTING) {
     const httpServer = http.createServer(app);
